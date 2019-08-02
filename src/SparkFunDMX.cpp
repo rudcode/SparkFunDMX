@@ -25,9 +25,11 @@ Distributed as-is; no warranty is given.
 #define DMXSPEED       250000
 #define DMXFORMAT      SERIAL_8N2
 
-int enablePin = 21;		//dafault on ESP32
-int rxPin = 16;
-int txPin = 17;
+#define DMXSerial Serial1
+
+int enablePin = PA8;
+int rxPin = PA10;
+int txPin = PA9;
 
 uint32_t _lastTimeStamp = 0;
 
@@ -35,8 +37,6 @@ uint32_t _lastTimeStamp = 0;
 uint8_t dmxData[dmxMaxChannel] = {};
 int chanSize;
 int currentChannel = 0;
-
-HardwareSerial DMXSerial(2);
 
 void SparkFunDMX::initRead(int chanQuant) {
   _READWRITE = _READ;
@@ -54,7 +54,6 @@ void SparkFunDMX::initRead(int chanQuant) {
 
 // Set up the DMX-Protocol
 void SparkFunDMX::initWrite (int chanQuant) {
-
   _READWRITE = _WRITE;
   if (chanQuant > dmxMaxChannel || chanQuant <= 0) {
     chanQuant = defaultMax;
@@ -62,7 +61,7 @@ void SparkFunDMX::initWrite (int chanQuant) {
 
   chanSize = chanQuant + 1; //Add 1 for start code
 
-  DMXSerial.begin(DMXSPEED, DMXFORMAT, rxPin, txPin);
+  DMXSerial.begin(DMXSPEED, DMXFORMAT);
   pinMode(enablePin, OUTPUT);
   digitalWrite(enablePin, HIGH);
 }
@@ -85,7 +84,7 @@ void SparkFunDMX::startCode() {
   if ((micros() - _lastTimeStamp) >= 87)
   {
 	currentChannel = 0;
-	DMXSerial.begin(DMXSPEED, DMXFORMAT, rxPin, txPin);
+	DMXSerial.begin(DMXSPEED, DMXFORMAT);
   }
   _lastTimeStamp = micros();
 }
@@ -93,15 +92,15 @@ void SparkFunDMX::startCode() {
 void SparkFunDMX::update() {
   if (_READWRITE == _WRITE)
   {
-	DMXSerial.begin(DMXSPEED, DMXFORMAT, rxPin, txPin);//Begin the Serial port
-    pinMatrixOutDetach(txPin, false, false); //Detach our
+    DMXSerial.flush();
+    DMXSerial.end();//clear our DMX array, end the Hardware Serial port
     pinMode(txPin, OUTPUT); 
     digitalWrite(txPin, LOW); //88 uS break
     delayMicroseconds(88);  
     digitalWrite(txPin, HIGH); //4 Us Mark After Break
     delayMicroseconds(1);
-    pinMatrixOutAttach(txPin, U2TXD_OUT_IDX, false, false);
 
+	DMXSerial.begin(DMXSPEED, DMXFORMAT);//Begin the Serial port
     DMXSerial.write(dmxData, chanSize);
     DMXSerial.flush();
     DMXSerial.end();//clear our DMX array, end the Hardware Serial port
