@@ -108,22 +108,22 @@ void SparkFunDMX::update() {
   else if (_READWRITE == _READ)//In a perfect world, this function ends serial communication upon packet completion and attaches RX to a CHANGE interrupt so the start code can be read again
   { 
     while (DMXSerial.available())
-	{
-	  if (currentChannel == 0)
-	  {
-	  	DMXSerial.read();
-	  }
+    {
+      if (currentChannel == 0)
+      {
+        DMXSerial.read();
+      }
       else if (currentChannel < dmxMaxChannel) {
         dmxData[currentChannel++] = DMXSerial.read();
       }
       else {
         DMXSerial.read();
       }
-	}
-	if (currentChannel > chanSize) //Set the channel counter back to 0 if we reach the known end size of our packet
-	{
-	  currentChannel = 0;
-	}
+    }
+    if (currentChannel > chanSize) //Set the channel counter back to 0 if we reach the known end size of our packet
+    {
+      currentChannel = 0;
+    }
   }
 }
 
