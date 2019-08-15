@@ -113,7 +113,12 @@ void SparkFunDMX::update() {
 	  {
 	  	DMXSerial.read();
 	  }
-	  dmxData[currentChannel++] = DMXSerial.read();
+      else if (currentChannel < dmxMaxChannel) {
+        dmxData[currentChannel++] = DMXSerial.read();
+      }
+      else {
+        DMXSerial.read();
+      }
 	}
 	if (currentChannel > chanSize) //Set the channel counter back to 0 if we reach the known end size of our packet
 	{
