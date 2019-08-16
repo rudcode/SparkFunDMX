@@ -115,7 +115,7 @@ void SparkFunDMX::update() {
       {
         DMXSerial.read();
       }
-      else if (currentChannel < dmxMaxChannel) {
+      if (currentChannel < dmxMaxChannel) {
         dmxData[currentChannel++] = DMXSerial.read();
       }
       else {
