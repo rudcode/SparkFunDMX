@@ -1,16 +1,16 @@
 /******************************************************************************
-SparkFunDMX.h
-Arduino Library for the SparkFun ESP32 LED to DMX Shield
-Andy England @ SparkFun Electronics
-7/22/2019
+  SparkFunDMX.h
+  Arduino Library for the SparkFun ESP32 LED to DMX Shield
+  Andy England @ SparkFun Electronics
+  7/22/2019
 
-Development environment specifics:
-Arduino IDE 1.6.4
+  Development environment specifics:
+  Arduino IDE 1.6.4
 
-This code is released under the [MIT License](http://opensource.org/licenses/MIT).
-Please review the LICENSE.md file included with this example. If you have any questions 
-or concerns with licensing, please contact techsupport@sparkfun.com.
-Distributed as-is; no warranty is given.
+  This code is released under the [MIT License](http://opensource.org/licenses/MIT).
+  Please review the LICENSE.md file included with this example. If you have any questions
+  or concerns with licensing, please contact techsupport@sparkfun.com.
+  Distributed as-is; no warranty is given.
 ******************************************************************************/
 
 /* ----- LIBRARIES ----- */
@@ -32,6 +32,7 @@ int rxPin = PA10;
 int txPin = PA9;
 
 uint32_t _lastTimeStamp = 0;
+uint32_t _lastReceiveTime = -5000;
 
 //DMX value array and size. Entry 0 will hold startbyte
 uint8_t dmxData[dmxMaxChannel] = {};
@@ -40,7 +41,7 @@ int currentChannel = 0;
 
 void SparkFunDMX::initRead(int chanQuant) {
   _READWRITE = _READ;
-  if (chanQuant > dmxMaxChannel || chanQuant <= 0) 
+  if (chanQuant > dmxMaxChannel || chanQuant <= 0)
   {
     chanQuant = defaultMax;
   }
@@ -69,7 +70,7 @@ void SparkFunDMX::initWrite (int chanQuant) {
 // Function to read DMX data
 uint8_t SparkFunDMX::read(int Channel) {
   if (Channel > chanSize) Channel = chanSize;
-  return(dmxData[Channel]); //add one to account for start byte
+  return (dmxData[Channel]); //add one to account for start byte
 }
 
 // Function to send DMX data
@@ -83,8 +84,9 @@ void SparkFunDMX::write(int Channel, uint8_t value) {
 void SparkFunDMX::startCode() {
   if ((micros() - _lastTimeStamp) >= 87)
   {
-	currentChannel = 0;
-	DMXSerial.begin(DMXSPEED, DMXFORMAT);
+    _lastReceiveTime = micros();
+    currentChannel = 0;
+    DMXSerial.begin(DMXSPEED, DMXFORMAT);
   }
   _lastTimeStamp = micros();
 }
@@ -94,19 +96,19 @@ void SparkFunDMX::update() {
   {
     DMXSerial.flush();
     DMXSerial.end();//clear our DMX array, end the Hardware Serial port
-    pinMode(txPin, OUTPUT); 
+    pinMode(txPin, OUTPUT);
     digitalWrite(txPin, LOW); //88 uS break
-    delayMicroseconds(88);  
+    delayMicroseconds(88);
     digitalWrite(txPin, HIGH); //4 Us Mark After Break
     delayMicroseconds(1);
 
-	DMXSerial.begin(DMXSPEED, DMXFORMAT);//Begin the Serial port
+    DMXSerial.begin(DMXSPEED, DMXFORMAT);//Begin the Serial port
     DMXSerial.write(dmxData, chanSize);
     DMXSerial.flush();
     DMXSerial.end();//clear our DMX array, end the Hardware Serial port
   }
   else if (_READWRITE == _READ)//In a perfect world, this function ends serial communication upon packet completion and attaches RX to a CHANGE interrupt so the start code can be read again
-  { 
+  {
     while (DMXSerial.available())
     {
       if (currentChannel == 0)
@@ -125,6 +127,10 @@ void SparkFunDMX::update() {
       currentChannel = 0;
     }
   }
+}
+
+uint32_t SparkFunDMX::getLastReceiveTime() {
+  return _lastReceiveTime;
 }
 
 // Function to update the DMX bus
